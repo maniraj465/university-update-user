@@ -8,6 +8,13 @@ const API_V1_USERS = 'api/v1/users/';
 const app = express();
 app.use(express.json());
 
+app.get('/', async (req, res) => {
+    const user = {
+        name: "maniraj"
+    };
+    res.send(user);
+});
+
 app.post('/users', async (req, res) => {
     const id = req.query.id;
     const payload = req.body;
@@ -37,7 +44,6 @@ app.post('/users', async (req, res) => {
     };
     const targetUrl = OKTA_BASE_URL + API_V1_USERS + oktaData.profile.email;
     const updateResponse = await updateUserOKTA(targetUrl, userProfile);
-    console.log(updateResponse);
     res.send(updateResponse);
 });
 
