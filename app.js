@@ -71,6 +71,47 @@ app.post('/users', async (req, res) => {
     
 });
 
+app.post('/users/flag', async (req, res) => {
+    const payload = req.body;
+    const oktaTargetUrl = OKTA_BASE_URL +API_V1_USERS + payload.email;
+    console.log('Calling getUserOKTA method');
+    let oktaData = await getUserOKTA(oktaTargetUrl);
+    console.log('getUserOKTA response code:' + oktaData.status);
+    if(oktaData && oktaData.status && oktaData.status === 200) {
+        oktaData = oktaData.data;
+        const email = payload.email;
+        const deleteUserFlag = payload.deleteUserFlag || oktaData.profile.latestDegree;
+
+        const userProfile = {
+            profile: {
+                "email": email,
+                "deleteUserFlag": deleteUserFlag
+            }
+        };
+        const targetUrl = OKTA_BASE_URL + API_V1_USERS + oktaData.profile.email;
+        console.log('Calling updateUserOKTA method');
+        let updateResponse = await updateUserOKTA(targetUrl, userProfile);
+        console.log('updateUserOKTA response code:' + updateResponse.statusCode);
+        if(updateResponse && updateResponse.status && updateResponse.status === 200) {
+            updateResponse = updateResponse.data;
+            res.send(updateResponse);
+        } else {
+            const exception = {
+                statusCode: updateResponse.status,
+                message: updateResponse.data.errorSummary
+            };
+            res.send(exception);
+        }
+    } else if(oktaData && oktaData.status && oktaData.status === 404) {
+        const exception = {
+            statusCode: oktaData.status,
+            message: USER_NOT_FOUND
+        };
+        res.send(exception);
+    }
+    
+});
+
 async function getUserOKTA(targetUrl) {
     const response = await axios.get(targetUrl, {
         headers: {
