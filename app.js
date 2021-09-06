@@ -1,10 +1,12 @@
 const express = require('express');
 const axios = require('axios');
 
-const GET_USER_BY_UID = 'api/v1/users?search=profile.uid+eq+';
+// const GET_USER_BY_UID = 'api/v1/users?search=profile.uid+eq+';
 const OKTA_BASE_URL = 'https://oie-3751727-admin.oktapreview.com/';
 const API_TOKEN = 'SSWS 00TnKVnUZ0eziDta_OgvZJGK7mpChMSnQni_bL9K15';
 const API_V1_USERS = 'api/v1/users/';
+const USER_NOT_FOUND = 'User not found with this email!';
+
 const app = express();
 app.use(express.json());
 
@@ -16,35 +18,56 @@ app.get('/', async (req, res) => {
 });
 
 app.post('/users', async (req, res) => {
-    const id = req.query.id;
     const payload = req.body;
-    const oktaTargetUrl = `${OKTA_BASE_URL}${GET_USER_BY_UID}"${id}"`;
+    const oktaTargetUrl = OKTA_BASE_URL +API_V1_USERS + payload.email;
+    console.log('Calling getUserOKTA method');
     let oktaData = await getUserOKTA(oktaTargetUrl);
-    oktaData = oktaData[0];
-    const firstName = payload.name || oktaData.profile.firstName;
-    const lastName = payload.family_name || oktaData.profile.lastName;
-    const email = payload.email || oktaData.profile.email;
-    const mobilePhone = payload.mobilePhone || oktaData.profile.mobilePhone;
-    const experience = payload.experience || oktaData.profile.experience;
-    const postalAddress = payload.postalAddress || oktaData.profile.postalAddress;
-    const specialization = payload.Specialization || oktaData.profile.specialization;
-    const latestDegree = payload.LatestDegree || oktaData.profile.latestDegree;
-
-    const userProfile = {
-        profile: {
-            "firstName": firstName,
-            "lastName": lastName,
-            "email": email,
-            "mobilePhone": mobilePhone,
-            "experience": experience,
-            "postalAddress": postalAddress,
-            "specialization": specialization,
-            "latestDegree": latestDegree,
+    console.log('getUserOKTA response code:' + oktaData.status);
+    if(oktaData && oktaData.status && oktaData.status === 200) {
+        oktaData = oktaData.data;
+        const firstName = payload.name || oktaData.profile.firstName;
+        const lastName = payload.family_name || oktaData.profile.lastName;
+        const email = payload.email || oktaData.profile.email;
+        const mobilePhone = payload.mobilePhone || oktaData.profile.mobilePhone;
+        const experience = payload.experience || oktaData.profile.experience;
+        const postalAddress = payload.postalAddress || oktaData.profile.postalAddress;
+        const specialization = payload.Specialization || oktaData.profile.specialization;
+        const latestDegree = payload.LatestDegree || oktaData.profile.latestDegree;
+    
+        const userProfile = {
+            profile: {
+                "firstName": firstName,
+                "lastName": lastName,
+                "email": email,
+                "mobilePhone": mobilePhone,
+                "experience": experience,
+                "postalAddress": postalAddress,
+                "specialization": specialization,
+                "latestDegree": latestDegree,
+            }
+        };
+        const targetUrl = OKTA_BASE_URL + API_V1_USERS + oktaData.profile.email;
+        console.log('Calling updateUserOKTA method');
+        let updateResponse = await updateUserOKTA(targetUrl, userProfile);
+        console.log('updateUserOKTA response code:' + updateResponse.statusCode);
+        if(updateResponse && updateResponse.status && updateResponse.status === 200) {
+            updateResponse = updateResponse.data;
+            res.send(updateResponse);
+        } else {
+            const exception = {
+                statusCode: updateResponse.status,
+                message: updateResponse.data.errorSummary
+            };
+            res.send(exception);
         }
-    };
-    const targetUrl = OKTA_BASE_URL + API_V1_USERS + oktaData.profile.email;
-    const updateResponse = await updateUserOKTA(targetUrl, userProfile);
-    res.send(updateResponse);
+    } else if(oktaData && oktaData.status && oktaData.status === 404) {
+        const exception = {
+            statusCode: oktaData.status,
+            message: USER_NOT_FOUND
+        };
+        res.send(exception);
+    }
+    
 });
 
 async function getUserOKTA(targetUrl) {
@@ -56,11 +79,11 @@ async function getUserOKTA(targetUrl) {
         }
     })
     .then(res => {
-        return res.data;
+        return res;
     })
     .catch(error => {
-        console.log(error);
-        return error;
+        console.log('Error in getUserOKTA' + error);
+        return error.response;
     });
     return await response;
 }
@@ -74,10 +97,10 @@ async function updateUserOKTA(targetUrl, payload) {
         }
     })
     .then(res => {
-        return res.data;
+        return res;
     })
     .catch(error => {
-        return error;
+        return error.response;
     });
     return await response;
 }
