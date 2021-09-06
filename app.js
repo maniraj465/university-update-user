@@ -7,12 +7,27 @@ const API_TOKEN = 'SSWS 00TnKVnUZ0eziDta_OgvZJGK7mpChMSnQni_bL9K15';
 const API_V1_USERS = 'api/v1/users/';
 const USER_NOT_FOUND = 'User not found with this email!';
 
-const corsOptions = {
-    origin: 'http://localhost:8080',
-    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-  };
 
 const app = express();
+
+// CORS
+const EXT_CORS_ALLOW_METHODS = 'GET,POST,OPTIONS,PUT,DELETE';
+const EXT_CORS_ALLOW_HEADERS = 'Content-Type,authorization,origin,accept';
+const ORIGIN = 'http://localhost:8080';
+
+const allowCrossDomain = function (req, res, next) {
+    res.header('Access-Control-Allow-Origin', ORIGIN);
+    res.header('Access-Control-Allow-Methods', EXT_CORS_ALLOW_METHODS);
+    res.header('Access-Control-Allow-Headers', EXT_CORS_ALLOW_HEADERS);
+    res.header('Access-Control-Allow-Credentials', true);
+    if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    } else {
+    next();
+    }
+};
+
+app.use(allowCrossDomain)
 app.use(express.json());
 
 app.get('/', async (req, res) => {
@@ -22,9 +37,11 @@ app.get('/', async (req, res) => {
     res.send(user);
 });
 
-app.post('/users', cors(corsOptions), async (req, res) => {
+
+
+app.post('/users', async (req, res) => {
     const payload = req.body;
-    const oktaTargetUrl = OKTA_BASE_URL +API_V1_USERS + payload.email;
+    const oktaTargetUrl = OKTA_BASE_URL + API_V1_USERS + payload.email;
     console.log('Calling getUserOKTA method');
     let oktaData = await getUserOKTA(oktaTargetUrl);
     console.log('getUserOKTA response code:' + oktaData.status);
@@ -76,7 +93,7 @@ app.post('/users', cors(corsOptions), async (req, res) => {
     
 });
 
-app.post('/users/flag', cors(corsOptions), async (req, res) => {
+app.post('/users/flag', async (req, res) => {
     const payload = req.body;
     const oktaTargetUrl = OKTA_BASE_URL +API_V1_USERS + payload.email;
     console.log('Calling getUserOKTA method');
