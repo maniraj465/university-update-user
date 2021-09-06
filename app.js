@@ -44,6 +44,7 @@ app.post('/users', async (req, res) => {
                 "postalAddress": postalAddress,
                 "specialization": specialization,
                 "latestDegree": latestDegree,
+                "RegistrationStatus": "Y"
             }
         };
         const targetUrl = OKTA_BASE_URL + API_V1_USERS + oktaData.profile.email;
