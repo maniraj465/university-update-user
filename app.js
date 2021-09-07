@@ -13,7 +13,7 @@ const app = express();
 // CORS
 const EXT_CORS_ALLOW_METHODS = 'GET,POST,OPTIONS,PUT,DELETE';
 const EXT_CORS_ALLOW_HEADERS = 'Content-Type,authorization,origin,accept';
-const ORIGIN = 'http://localhost:8080';
+const ORIGIN = 'https://d8231h5snasls.cloudfront.net, https://d3nb0ibosacigr.cloudfront.net';
 
 const allowCrossDomain = function (req, res, next) {
     res.header('Access-Control-Allow-Origin', ORIGIN);
@@ -27,7 +27,7 @@ const allowCrossDomain = function (req, res, next) {
     }
 };
 
-app.use(allowCrossDomain)
+app.use(allowCrossDomain);
 app.use(express.json());
 
 app.get('/', async (req, res) => {
